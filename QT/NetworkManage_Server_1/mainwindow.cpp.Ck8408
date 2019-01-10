@@ -1,0 +1,87 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+#include <QTableWidget>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QMessageBox>
+#include <QDateTime>
+#include <QString>
+
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainWindow)
+{
+    ui->setupUi(this);
+
+    // init tableWidget
+    ui->tableWidget->setEditTriggers(QTableWidget::NoEditTriggers);
+    ui->tableWidget->setRowCount(0);
+    ui->tableWidget->setColumnCount(4);
+    ui->tableWidget->setHorizontalHeaderItem(0, new QTableWidgetItem("name"));
+    ui->tableWidget->setHorizontalHeaderItem(1, new QTableWidgetItem("beginTime"));
+    ui->tableWidget->setHorizontalHeaderItem(2, new QTableWidgetItem("endTime"));
+    ui->tableWidget->setHorizontalHeaderItem(3, new QTableWidgetItem("type"));
+    ui->tableWidget->setColumnWidth(0, 200);
+    ui->tableWidget->setColumnWidth(1, 150);
+    ui->tableWidget->setColumnWidth(2, 150);
+    ui->tableWidget->setColumnWidth(3, 050);
+
+    ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);  //整行选中的方式
+    ui->tableWidget->verticalHeader()->setVisible(false);                   //隐藏列表头
+    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);       //关键
+    ui->tableWidget->horizontalHeader()->setHighlightSections(false);
+
+    QString test = QStringLiteral("用户查询");
+    ui->tabWidget->setTabText( 0, test );
+}
+
+MainWindow::~MainWindow()
+{
+    delete ui;
+}
+
+void MainWindow::on_exportButton_clicked()
+{
+
+}
+
+void MainWindow::on_searchButton_clicked()
+{
+    QSqlDatabase db = QSqlDatabase::addDatabase("QMYSQL");
+    db.setPort(3306);
+    db.setHostName("localhost");
+    db.setDatabaseName("networkmanage");
+    db.setUserName("root");
+    db.setPassword("123456");
+    if (!db.open())
+    {
+        QMessageBox::critical(0, QObject::tr("failed"),
+        "failed", QMessageBox::Cancel);
+        db.close();
+        return;
+    }
+    QSqlQuery query(db);
+    QString userID = ui->lineEdit->text();
+    QString str = QString("select *from timeinfo where name = '%1'").arg(userID);
+    if ( userID == "")
+    {
+        str = "select *from timeinfo";
+    }
+    query.exec(str);
+    while (query.next())
+    {
+        ui->tableWidget->insertRow(0);
+        QDateTime beginDateTime = QDateTime::fromTime_t( query.value(1).toInt());
+        QDateTime endDateTime =   QDateTime::fromTime_t( query.value(2).toInt());
+        ui->tableWidget->setItem(0, 0, new QTableWidgetItem(query.value(0).toString()));
+        ui->tableWidget->setItem(0, 1, new QTableWidgetItem(beginDateTime.toString("yyyy-MM-dd hh:mm:ss")));
+        ui->tableWidget->setItem(0, 2, new QTableWidgetItem(endDateTime.toString(  "yyyy-MM-dd hh:mm:ss")));
+        ui->tableWidget->setItem(0, 3, new QTableWidgetItem(query.value(3).toString()));
+    }
+    db.close();
+}
+
+void MainWindow::on_settingButton_clicked()
+{
+
+}
